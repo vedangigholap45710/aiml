@@ -1,0 +1,145 @@
+
+# Classification using Decision Tree and Naive Bayes
+
+# 1. Import Libraries
+import pandas as pd
+import matplotlib.pyplot as plt
+
+from sklearn.datasets import load_breast_cancer
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.metrics import (
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score,
+    confusion_matrix,
+    classification_report
+)
+
+# 2. Load Dataset
+data = load_breast_cancer(as_frame=True)
+df = data.frame
+
+print("First 5 rows of dataset:")
+print(df.head())
+
+print("\nDataset shape:", df.shape)
+print("Target classes:", data.target_names)
+
+# 3. Separate Features and Target
+X = df.drop("target", axis=1)
+y = df["target"]
+
+# 4. Split Dataset into Training and Testing Sets
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y,
+    test_size=0.2,
+    random_state=42,
+    stratify=y
+)
+
+print("\nTraining data shape:", X_train.shape)
+print("Testing data shape:", X_test.shape)
+
+# 5. Decision Tree Classifier
+dt_model = DecisionTreeClassifier(random_state=42)
+dt_model.fit(X_train, y_train)
+dt_pred = dt_model.predict(X_test)
+
+# 6. Naive Bayes Classifier
+nb_model = GaussianNB()
+nb_model.fit(X_train, y_train)
+nb_pred = nb_model.predict(X_test)
+
+# 7. Evaluate Decision Tree
+print("\n--- DECISION TREE RESULTS ---")
+print("Accuracy:", accuracy_score(y_test, dt_pred))
+print("Precision:", precision_score(y_test, dt_pred))
+print("Recall:", recall_score(y_test, dt_pred))
+print("F1 Score:", f1_score(y_test, dt_pred))
+
+print("\nClassification Report:")
+print(classification_report(
+    y_test, dt_pred,
+    target_names=data.target_names
+))
+
+# 8. Evaluate Naive Bayes
+print("\n--- NAIVE BAYES RESULTS ---")
+print("Accuracy:", accuracy_score(y_test, nb_pred))
+print("Precision:", precision_score(y_test, nb_pred))
+print("Recall:", recall_score(y_test, nb_pred))
+print("F1 Score:", f1_score(y_test, nb_pred))
+
+print("\nClassification Report:")
+print(classification_report(
+    y_test, nb_pred,
+    target_names=data.target_names
+))
+
+# 9. Compare Both Models
+results = pd.DataFrame({
+    "Model": ["Decision Tree", "Naive Bayes"],
+    "Accuracy": [
+        accuracy_score(y_test, dt_pred),
+        accuracy_score(y_test, nb_pred)
+    ],
+    "Precision": [
+        precision_score(y_test, dt_pred),
+        precision_score(y_test, nb_pred)
+    ],
+    "Recall": [
+        recall_score(y_test, dt_pred),
+        recall_score(y_test, nb_pred)
+    ],
+    "F1 Score": [
+        f1_score(y_test, dt_pred),
+        f1_score(y_test, nb_pred)
+    ]
+})
+
+print("\n--- MODEL COMPARISON ---")
+print(results.round(4).to_string(index=False))
+
+# 10. Display Confusion Matrices
+fig, axes = plt.subplots(1, 2, figsize=(10, 4))
+
+for ax, pred, title in [
+    (axes[0], dt_pred, "Decision Tree"),
+    (axes[1], nb_pred, "Naive Bayes")
+]:
+    cm = confusion_matrix(y_test, pred)
+    ax.imshow(cm)
+    ax.set_title(title)
+    ax.set_xlabel("Predicted Class")
+    ax.set_ylabel("Actual Class")
+    ax.set_xticks([0, 1], labels=data.target_names)
+    ax.set_yticks([0, 1], labels=data.target_names)
+
+    for i in range(2):
+        for j in range(2):
+            ax.text(j, i, cm[i, j],
+                    ha="center", va="center")
+
+plt.tight_layout()
+plt.show()
+
+# 11. Identify the Better Model
+dt_accuracy = accuracy_score(y_test, dt_pred)
+nb_accuracy = accuracy_score(y_test, nb_pred)
+
+print("\n--- FINAL CONCLUSION ---")
+
+if dt_accuracy > nb_accuracy:
+    print("Decision Tree performed better based on accuracy.")
+elif nb_accuracy > dt_accuracy:
+    print("Naive Bayes performed better based on accuracy.")
+else:
+    print("Both models achieved the same accuracy.")
+
+print("Compare precision, recall, and F1 score as well")
+print("before selecting the most suitable model.")
+
+print("\nPractical completed successfully!")

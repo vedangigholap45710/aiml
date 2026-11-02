@@ -1,0 +1,235 @@
+
+# Advanced Machine Learning and Model Optimization
+# SVM, Random Forest, AdaBoost, Cross Validation and Grid Search
+
+# 1. Import Libraries
+import pandas as pd
+import matplotlib.pyplot as plt
+
+from sklearn.datasets import load_breast_cancer
+from sklearn.model_selection import (
+    train_test_split,
+    cross_val_score,
+    GridSearchCV,
+    StratifiedKFold
+)
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
+from sklearn.svm import SVC
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
+from sklearn.metrics import (
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score
+)
+
+# 2. Load Dataset
+data = load_breast_cancer(as_frame=True)
+X = data.data
+y = data.target
+
+print("First 5 rows:")
+print(X.head())
+print("\nDataset shape:", X.shape)
+print("Number of features:", X.shape[1])
+
+# 3. Split Dataset
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y,
+    test_size=0.2,
+    random_state=42,
+    stratify=y
+)
+
+# 4. Define Models Before Optimization
+models = {
+    "SVM": Pipeline([
+        ("scaler", StandardScaler()),
+        ("model", SVC())
+    ]),
+    "Random Forest": RandomForestClassifier(
+        random_state=42
+    ),
+    "AdaBoost": AdaBoostClassifier(
+        random_state=42
+    )
+}
+
+# 5. Cross Validation and Baseline Evaluation
+cv = StratifiedKFold(
+    n_splits=5,
+    shuffle=True,
+    random_state=42
+)
+
+baseline_results = []
+optimized_results = []
+best_models = {}
+
+print("\n--- BEFORE OPTIMIZATION ---")
+
+for name, model in models.items():
+    # Cross-validation on training data
+    scores = cross_val_score(
+        model, X_train, y_train,
+        cv=cv, scoring="accuracy"
+    )
+
+    # Train and evaluate on test data
+    model.fit(X_train, y_train)
+    predictions = model.predict(X_test)
+
+    accuracy = accuracy_score(y_test, predictions)
+    precision = precision_score(y_test, predictions)
+    recall = recall_score(y_test, predictions)
+    f1 = f1_score(y_test, predictions)
+
+    baseline_results.append({
+        "Model": name,
+        "CV Mean Accuracy": scores.mean(),
+        "Test Accuracy": accuracy,
+        "Precision": precision,
+        "Recall": recall,
+        "F1 Score": f1
+    })
+
+    print("\n", name)
+    print("Cross-validation scores:", scores.round(4))
+    print("Mean CV accuracy:", round(scores.mean(), 4))
+    print("Test accuracy:", round(accuracy, 4))
+    print("Precision:", round(precision, 4))
+    print("Recall:", round(recall, 4))
+    print("F1 Score:", round(f1, 4))
+
+# 6. Define Hyperparameter Grids
+param_grids = {
+    "SVM": {
+        "model__C": [0.1, 1, 10],
+        "model__kernel": ["linear", "rbf"],
+        "model__gamma": ["scale", "auto"]
+    },
+    "Random Forest": {
+        "n_estimators": [100, 200],
+        "max_depth": [None, 5, 10],
+        "min_samples_split": [2, 5]
+    },
+    "AdaBoost": {
+        "n_estimators": [50, 100, 200],
+        "learning_rate": [0.1, 0.5, 1.0]
+    }
+}
+
+# 7. Hyperparameter Tuning Using Grid Search
+print("\n--- GRID SEARCH OPTIMIZATION ---")
+
+for name, model in models.items():
+    grid = GridSearchCV(
+        estimator=model,
+        param_grid=param_grids[name],
+        cv=cv,
+        scoring="accuracy",
+        n_jobs=-1
+    )
+
+    grid.fit(X_train, y_train)
+
+    best_model = grid.best_estimator_
+    best_models[name] = best_model
+
+    predictions = best_model.predict(X_test)
+
+    accuracy = accuracy_score(y_test, predictions)
+    precision = precision_score(y_test, predictions)
+    recall = recall_score(y_test, predictions)
+    f1 = f1_score(y_test, predictions)
+
+    optimized_results.append({
+        "Model": name,
+        "Best CV Accuracy": grid.best_score_,
+        "Test Accuracy": accuracy,
+        "Precision": precision,
+        "Recall": recall,
+        "F1 Score": f1
+    })
+
+    print("\n", name)
+    print("Best parameters:", grid.best_params_)
+    print("Best CV accuracy:", round(grid.best_score_, 4))
+    print("Optimized test accuracy:", round(accuracy, 4))
+    print("Precision:", round(precision, 4))
+    print("Recall:", round(recall, 4))
+    print("F1 Score:", round(f1, 4))
+
+# 8. Display Baseline Results
+baseline_df = pd.DataFrame(baseline_results)
+
+print("\n--- BASELINE MODEL COMPARISON ---")
+print(baseline_df.round(4).to_string(index=False))
+
+# 9. Display Optimized Results
+optimized_df = pd.DataFrame(optimized_results)
+
+print("\n--- OPTIMIZED MODEL COMPARISON ---")
+print(optimized_df.round(4).to_string(index=False))
+
+# 10. Compare Accuracy Before and After Optimization
+comparison = pd.DataFrame({
+    "Model": baseline_df["Model"],
+    "Before Optimization": baseline_df["Test Accuracy"],
+    "After Optimization": optimized_df["Test Accuracy"]
+})
+
+comparison["Accuracy Change"] = (
+    comparison["After Optimization"]
+    - comparison["Before Optimization"]
+)
+
+print("\n--- BEFORE VS AFTER OPTIMIZATION ---")
+print(comparison.round(4).to_string(index=False))
+
+# 11. Visualize Performance Comparison
+x = range(len(comparison))
+width = 0.35
+
+plt.figure(figsize=(9, 5))
+
+plt.bar(
+    [i - width / 2 for i in x],
+    comparison["Before Optimization"],
+    width=width,
+    label="Before Optimization"
+)
+
+plt.bar(
+    [i + width / 2 for i in x],
+    comparison["After Optimization"],
+    width=width,
+    label="After Optimization"
+)
+
+plt.xticks(list(x), comparison["Model"])
+plt.ylabel("Test Accuracy")
+plt.title("Model Performance Before and After Optimization")
+plt.legend()
+plt.tight_layout()
+plt.show()
+
+# 12. Identify Best Optimized Model
+best_index = optimized_df["Test Accuracy"].idxmax()
+best_name = optimized_df.loc[best_index, "Model"]
+
+print("\n--- FINAL CONCLUSION ---")
+print("Best optimized model based on test accuracy:", best_name)
+print(
+    "Its test accuracy is:",
+    round(optimized_df.loc[best_index, "Test Accuracy"], 4)
+)
+print(
+    "Cross-validation and Grid Search were used to tune model parameters."
+)
+print(
+    "Compare accuracy, precision, recall and F1 score "
+    "when selecting the most suitable model."
+)
+print("\nPractical completed successfully!")

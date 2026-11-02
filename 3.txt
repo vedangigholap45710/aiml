@@ -1,0 +1,64 @@
+
+rules = [
+    (["python", "mathematics"], "software_engineering"),
+    (["mathematics", "problem_solving"], "data_science"),
+    (["data_science", "communication"], "data_analyst"),
+    (["python", "hardware_interest"], "embedded_systems"),
+    (["software_engineering", "communication"], "technical_lead")
+]
+
+
+def forward_chaining(facts, rules):
+    derived = list(facts)
+    changed = True
+
+    while changed:
+        changed = False
+
+        for conditions, conclusion in rules:
+            if conclusion in derived:
+                continue
+
+            if all(c in derived for c in conditions):
+                derived.append(conclusion)
+                print("Rule fired:", conditions, "->", conclusion)
+                changed = True
+
+    return derived
+
+
+def backward_chaining(goal, facts, rules):
+    if goal in facts:
+        return True
+
+    for conditions, conclusion in rules:
+        if conclusion == goal:
+            print("Checking goal:", goal)
+
+            if all(backward_chaining(c, facts, rules)
+                   for c in conditions):
+                return True
+
+    return False
+
+
+user_input = input("Enter your skills (comma separated): ")
+facts = [skill.strip() for skill in user_input.split(",")]
+
+print("\nInitial facts:", facts)
+
+print("\n--- Forward Chaining ---")
+final_facts = forward_chaining(facts, rules)
+
+print("\nRecommended careers:")
+for f in final_facts:
+    if f not in facts:
+        print("*", f)
+
+print("\n--- Backward Chaining ---")
+goal = input("Enter career to check: ").strip()
+
+if backward_chaining(goal, facts, rules):
+    print(goal, "can be recommended.")
+else:
+    print(goal, "cannot be proved from the given facts.")

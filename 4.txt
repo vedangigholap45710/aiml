@@ -1,0 +1,98 @@
+
+# Data Preprocessing and Exploratory Data Analysis (EDA)
+
+# 1. Import Libraries
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+
+# 2. Load Dataset
+url = "https://raw.githubusercontent.com/datasciencedojo/datasets/master/titanic.csv"
+df = pd.read_csv(url)
+
+print("First 5 rows:")
+print(df.head())
+
+print("\nDataset shape:", df.shape)
+
+# 3. Data Cleaning
+df.drop_duplicates(inplace=True)
+
+df.drop(columns=["PassengerId", "Name", "Ticket", "Cabin"],
+        inplace=True, errors="ignore")
+
+print("\nData after cleaning:")
+print(df.head())
+
+# 4. Missing Value Handling
+print("\nMissing values before handling:")
+print(df.isnull().sum())
+
+for col in df.select_dtypes(include=np.number).columns:
+    df[col] = df[col].fillna(df[col].median())
+
+for col in df.select_dtypes(include="object").columns:
+    df[col] = df[col].fillna(df[col].mode()[0])
+
+print("\nMissing values after handling:")
+print(df.isnull().sum())
+
+# 5. Statistical Analysis
+print("\nStatistical summary:")
+print(df.describe())
+
+print("\nSurvival counts:")
+print(df["Survived"].value_counts())
+
+print("\nAverage age:", df["Age"].mean())
+print("Maximum fare:", df["Fare"].max())
+
+# 6. Data Visualization - Histograms
+df[["Age", "Fare", "SibSp", "Parch"]].hist(figsize=(10, 7))
+plt.suptitle("Histograms of Titanic Dataset")
+plt.tight_layout()
+plt.show()
+
+# 7. Data Visualization - Boxplots
+plt.figure(figsize=(8, 5))
+sns.boxplot(data=df[["Age", "Fare"]])
+plt.title("Boxplot of Age and Fare")
+plt.show()
+
+# 8. Encoding Categorical Variables
+df = pd.get_dummies(
+    df,
+    columns=["Sex", "Embarked"],
+    drop_first=True,
+    dtype=int
+)
+
+print("\nData after encoding:")
+print(df.head())
+
+# 9. Separate Features and Target
+X = df.drop("Survived", axis=1)
+y = df["Survived"]
+
+# 10. Split Dataset into Training and Testing Sets
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+print("\nTraining data shape:", X_train.shape)
+print("Testing data shape:", X_test.shape)
+
+# 11. Feature Scaling
+scaler = StandardScaler()
+
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+
+print("\nScaled training data:")
+print(X_train[:5])
+
+print("\nData preprocessing and EDA completed successfully!")

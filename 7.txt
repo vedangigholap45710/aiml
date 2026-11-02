@@ -1,0 +1,147 @@
+
+# Clustering Techniques: K-Means and Hierarchical Clustering
+
+# 1. Import Libraries
+import pandas as pd
+import matplotlib.pyplot as plt
+
+from sklearn.datasets import load_iris
+from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import KMeans, AgglomerativeClustering
+from sklearn.metrics import silhouette_score
+
+from scipy.cluster.hierarchy import dendrogram, linkage
+
+# 2. Load Dataset
+data = load_iris(as_frame=True)
+df = data.data
+
+print("First 5 rows of dataset:")
+print(df.head())
+
+print("\nDataset Shape:", df.shape)
+print("\nDataset Information:")
+print(df.describe())
+
+# 3. Standardize the Data
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(df)
+
+# 4. Elbow Method to Find Optimal K
+wcss = []
+
+for k in range(1, 11):
+    kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
+    kmeans.fit(X_scaled)
+    wcss.append(kmeans.inertia_)
+
+plt.figure(figsize=(8, 5))
+plt.plot(range(1, 11), wcss, marker="o")
+plt.xlabel("Number of Clusters (K)")
+plt.ylabel("WCSS")
+plt.title("Elbow Method")
+plt.xticks(range(1, 11))
+plt.grid(True)
+plt.show()
+
+# 5. Apply K-Means Clustering
+# Iris commonly forms 3 groups; compare with the Elbow plot.
+kmeans = KMeans(n_clusters=3, random_state=42, n_init=10)
+kmeans_labels = kmeans.fit_predict(X_scaled)
+
+df_kmeans = df.copy()
+df_kmeans["KMeans_Cluster"] = kmeans_labels
+
+print("\nK-Means Cluster Counts:")
+print(df_kmeans["KMeans_Cluster"].value_counts().sort_index())
+
+print("\nK-Means Silhouette Score:",
+      round(silhouette_score(X_scaled, kmeans_labels), 4))
+
+# 6. Create Dendrogram for Hierarchical Clustering
+linked = linkage(X_scaled, method="ward")
+
+plt.figure(figsize=(12, 6))
+dendrogram(linked)
+plt.title("Hierarchical Clustering Dendrogram")
+plt.xlabel("Data Points")
+plt.ylabel("Distance")
+plt.show()
+
+# 7. Apply Hierarchical Clustering
+hierarchical = AgglomerativeClustering(
+    n_clusters=3,
+    linkage="ward"
+)
+
+hierarchical_labels = hierarchical.fit_predict(X_scaled)
+
+df_hierarchical = df.copy()
+df_hierarchical["Hierarchical_Cluster"] = hierarchical_labels
+
+print("\nHierarchical Cluster Counts:")
+print(
+    df_hierarchical["Hierarchical_Cluster"]
+    .value_counts()
+    .sort_index()
+)
+
+print("\nHierarchical Silhouette Score:",
+      round(silhouette_score(X_scaled, hierarchical_labels), 4))
+
+# 8. Visualize K-Means Clusters
+plt.figure(figsize=(8, 5))
+plt.scatter(
+    X_scaled[:, 0],
+    X_scaled[:, 1],
+    c=kmeans_labels,
+    cmap="viridis",
+    s=50
+)
+plt.xlabel("Standardized Sepal Length")
+plt.ylabel("Standardized Sepal Width")
+plt.title("K-Means Clustering")
+plt.show()
+
+# 9. Visualize Hierarchical Clusters
+plt.figure(figsize=(8, 5))
+plt.scatter(
+    X_scaled[:, 0],
+    X_scaled[:, 1],
+    c=hierarchical_labels,
+    cmap="rainbow",
+    s=50
+)
+plt.xlabel("Standardized Sepal Length")
+plt.ylabel("Standardized Sepal Width")
+plt.title("Hierarchical Clustering")
+plt.show()
+
+# 10. Compare Both Clustering Techniques
+comparison = pd.DataFrame({
+    "Method": ["K-Means", "Hierarchical"],
+    "Number of Clusters": [
+        len(set(kmeans_labels)),
+        len(set(hierarchical_labels))
+    ],
+    "Silhouette Score": [
+        silhouette_score(X_scaled, kmeans_labels),
+        silhouette_score(X_scaled, hierarchical_labels)
+    ]
+})
+
+print("\n--- CLUSTERING COMPARISON ---")
+print(comparison.round(4).to_string(index=False))
+
+# 11. Analyze Cluster Characteristics
+print("\n--- K-MEANS CLUSTER MEANS ---")
+print(df_kmeans.groupby("KMeans_Cluster").mean().round(2))
+
+print("\n--- HIERARCHICAL CLUSTER MEANS ---")
+print(
+    df_hierarchical.groupby("Hierarchical_Cluster")
+    .mean()
+    .round(2)
+)
+
+print("\nPractical completed successfully!")

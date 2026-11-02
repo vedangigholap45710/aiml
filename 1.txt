@@ -1,0 +1,51 @@
+# ---------- AGENT FUNCTION ----------
+def smart_home_agent(temperature, motion, light, owner_home):
+
+    actions = {}
+
+    # Rule 1: Temperature Control
+    if temperature > 30:
+        actions["Fan"] = "ON"
+    else:
+        actions["Fan"] = "OFF"
+
+    # Rule 2: Lighting Control
+    if motion == "yes" and light == "dark":
+        actions["Light"] = "ON"
+    else:
+        actions["Light"] = "OFF"
+
+    # Rule 3: Security Control
+    if motion == "yes" and owner_home == "no":
+        actions["Alarm"] = "ON"
+    else:
+        actions["Alarm"] = "OFF"
+
+    return actions
+
+
+# ---------- SENSORS: USER INPUT ----------
+print("--- SENSOR READINGS ---")
+
+temperature = int(input("Temperature sensor (Celsius): "))
+motion = input("Motion sensor (yes/no): ").lower()
+light = input("Light sensor (bright/dark): ").lower()
+owner_home = input("Presence sensor, owner home (yes/no): ").lower()
+
+
+decisions = smart_home_agent(
+    temperature,
+    motion,
+    light,
+    owner_home
+)
+
+
+print()
+print("--- ACTUATOR STATUS ---")
+
+for device in decisions:
+    print(device, "=", decisions[device])
+
+
+    
