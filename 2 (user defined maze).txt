@@ -1,0 +1,124 @@
+from collections import deque
+import time
+
+# Step 1: Create Graph using User Input
+graph = {}
+
+n = int(input("Enter number of nodes: "))
+nodes = input("Enter node names separated by space: ").split()
+
+for node in nodes:
+    graph[node] = []
+
+# Step 2: Enter Edges
+e = int(input("Enter number of edges: "))
+
+for i in range(e):
+    u, v = input("Enter edge (A B): ").split()
+    graph[u].append(v)
+    graph[v].append(u)
+
+# Step 3: Enter Start and Goal Nodes
+start = input("Enter start node: ")
+goal = input("Enter goal node: ")
+
+
+# Step 4: Reconstruct Path
+def reconstruct_path(parent, goal):
+    if goal not in parent:
+        return []
+
+    path = []
+    current = goal
+
+    while current is not None:
+        path.append(current)
+        current = parent[current]
+
+    path.reverse()
+    return path
+
+
+# Step 5: Breadth First Search (BFS)
+def bfs(graph, start, goal):
+    queue = deque([start])
+    visited = {start}
+    parent = {start: None}
+    nodes_explored = 0
+
+    while queue:
+        current = queue.popleft()
+        nodes_explored += 1
+
+        if current == goal:
+            return reconstruct_path(parent, goal), nodes_explored
+
+        for neighbor in graph[current]:
+            if neighbor not in visited:
+                visited.add(neighbor)
+                parent[neighbor] = current
+                queue.append(neighbor)
+
+    return [], nodes_explored
+
+
+# Step 6: Depth First Search (DFS)
+def dfs(graph, start, goal):
+    stack = [start]
+    visited = {start}
+    parent = {start: None}
+    nodes_explored = 0
+
+    while stack:
+        current = stack.pop()
+        nodes_explored += 1
+
+        if current == goal:
+            return reconstruct_path(parent, goal), nodes_explored
+
+        for neighbor in reversed(graph[current]):
+            if neighbor not in visited:
+                visited.add(neighbor)
+                parent[neighbor] = current
+                stack.append(neighbor)
+
+    return [], nodes_explored
+
+
+# Step 7: Execute BFS and Measure Time
+start_time = time.perf_counter()
+bfs_path, bfs_nodes = bfs(graph, start, goal)
+bfs_time = time.perf_counter() - start_time
+
+
+# Step 8: Execute DFS and Measure Time
+start_time = time.perf_counter()
+dfs_path, dfs_nodes = dfs(graph, start, goal)
+dfs_time = time.perf_counter() - start_time
+
+
+# Step 9: Display BFS Results
+print("\n----- BFS RESULTS -----")
+print("BFS Path:", bfs_path)
+print("BFS Path Length:", len(bfs_path) - 1 if bfs_path else 0)
+print("BFS Nodes Explored:", bfs_nodes)
+print("BFS Execution Time:", bfs_time, "seconds")
+
+
+# Step 10: Display DFS Results
+print("\n----- DFS RESULTS -----")
+print("DFS Path:", dfs_path)
+print("DFS Path Length:", len(dfs_path) - 1 if dfs_path else 0)
+print("DFS Nodes Explored:", dfs_nodes)
+print("DFS Execution Time:", dfs_time, "seconds")
+
+
+# Step 11: Performance Comparison
+print("\n----- PERFORMANCE COMPARISON -----")
+print("Algorithm | Path Length | Nodes Explored | Execution Time")
+
+print("BFS |", len(bfs_path) - 1 if bfs_path else 0,
+      "|", bfs_nodes, "|", bfs_time, "seconds")
+
+print("DFS |", len(dfs_path) - 1 if dfs_path else 0,
+      "|", dfs_nodes, "|", dfs_time, "seconds")
